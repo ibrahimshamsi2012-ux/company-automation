@@ -1,22 +1,21 @@
-import { auth, currentUser } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
-
 export const dynamic = "force-dynamic";
-
-const settingsUrl = process.env.NEXT_PUBLIC_APP_URL + "/dashboard";
 
 export async function GET() {
   try {
+    const settingsUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000") + "/dashboard";
+    
     // Build-time safety check
     if (!process.env.STRIPE_API_KEY || process.env.STRIPE_API_KEY.includes('YOUR_')) {
-      return NextResponse.json({ skip: true });
+      return new Response(JSON.stringify({ skip: true }), { status: 200 });
     }
 
+    // Move Clerk inside to prevent build-time crashes
+    const { auth, currentUser } = await import("@clerk/nextjs");
     const { userId } = auth();
     const user = await currentUser();
 
     if (!userId || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
     // Dynamic import to prevent build-time crashes

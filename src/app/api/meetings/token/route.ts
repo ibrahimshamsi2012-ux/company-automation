@@ -1,20 +1,19 @@
-import { auth, currentUser } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
-
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
     // Check if we are in a build environment or missing keys
     if (!process.env.LIVEKIT_API_KEY || process.env.LIVEKIT_API_KEY.includes('YOUR_')) {
-      return NextResponse.json({ token: "build-mode-skip" });
+      return new Response(JSON.stringify({ token: "build-mode-skip" }), { status: 200 });
     }
 
+    // Move Clerk inside to prevent build-time crashes
+    const { auth, currentUser } = await import("@clerk/nextjs");
     const { userId } = auth();
     const user = await currentUser();
 
     if (!userId || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);

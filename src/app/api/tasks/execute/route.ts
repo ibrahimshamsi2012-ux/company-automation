@@ -1,18 +1,18 @@
-import { auth } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
-
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
     // Build-time safety check
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_')) {
-      return NextResponse.json({ skip: true });
+      return new Response(JSON.stringify({ skip: true }), { status: 200 });
     }
 
+    // Move Clerk inside to prevent build-time crashes
+    const { auth } = await import("@clerk/nextjs");
     const { userId } = auth();
+    
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const { taskDescription, context } = await req.json();
