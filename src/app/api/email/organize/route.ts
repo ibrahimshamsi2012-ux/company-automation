@@ -5,6 +5,9 @@ import { openai } from "@/lib/openai";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  if (process.env.VERCEL_ENV === 'production' && (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_'))) {
+    return NextResponse.json({ skip: true });
+  }
   try {
     const { userId } = auth();
     if (!userId) {

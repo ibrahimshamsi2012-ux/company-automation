@@ -13,6 +13,10 @@ export async function POST(req: Request) {
 
     const { text } = await req.json();
 
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_')) {
+      return new NextResponse("API Key not configured", { status: 500 });
+    }
+
     const response = await openai.audio.speech.create({
       model: "tts-1",
       voice: "alloy",

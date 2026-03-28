@@ -16,6 +16,11 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const room = searchParams.get("room") || "meeting-room";
 
+    // Build-time check to prevent crash
+    if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET || process.env.LIVEKIT_API_KEY.includes('YOUR_')) {
+      return NextResponse.json({ token: "missing-key-contact-admin" });
+    }
+
     const at = new AccessToken(
       process.env.LIVEKIT_API_KEY,
       process.env.LIVEKIT_API_SECRET,
