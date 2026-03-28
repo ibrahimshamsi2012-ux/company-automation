@@ -2,6 +2,8 @@ import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const { userId } = auth();

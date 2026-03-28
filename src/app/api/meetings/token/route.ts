@@ -2,6 +2,8 @@ import { AccessToken } from "livekit-server-sdk";
 import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const { userId } = auth();

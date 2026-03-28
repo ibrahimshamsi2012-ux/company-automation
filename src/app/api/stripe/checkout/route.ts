@@ -2,6 +2,8 @@ import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 
+export const dynamic = "force-dynamic";
+
 const settingsUrl = process.env.NEXT_PUBLIC_APP_URL + "/dashboard";
 
 export async function GET() {
