@@ -1,4 +1,3 @@
-import { AccessToken } from "livekit-server-sdk";
 import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
@@ -6,6 +5,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
+    // Check if we are in a build environment or missing keys
+    if (!process.env.LIVEKIT_API_KEY || process.env.LIVEKIT_API_KEY.includes('YOUR_')) {
+      return NextResponse.json({ token: "build-mode-skip" });
+    }
+
     const { userId } = auth();
     const user = await currentUser();
 
@@ -16,10 +20,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const room = searchParams.get("room") || "meeting-room";
 
-    // Build-time check to prevent crash
-    if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET || process.env.LIVEKIT_API_KEY.includes('YOUR_')) {
-      return NextResponse.json({ token: "missing-key-contact-admin" });
-    }
+    // Dynamically import to prevent build-time crashes
+    const { AccessToken } = await import("livekit-server-sdk");
 
     const at = new AccessToken(
       process.env.LIVEKIT_API_KEY,

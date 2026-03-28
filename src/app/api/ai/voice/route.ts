@@ -1,11 +1,15 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { openai } from "@/lib/openai";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    // Check for OpenAI key before anything else to prevent build crash
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_')) {
+      return new NextResponse("API Key not configured", { status: 200 });
+    }
+
     const { userId } = auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -13,9 +17,8 @@ export async function POST(req: Request) {
 
     const { text } = await req.json();
 
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_')) {
-      return new NextResponse("API Key not configured", { status: 500 });
-    }
+    // Dynamically import openai to prevent module-level crashes during build
+    const { openai } = await import("@/lib/openai");
 
     const response = await openai.audio.speech.create({
       model: "tts-1",

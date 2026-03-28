@@ -1,20 +1,24 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { openai } from "@/lib/openai";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  if (process.env.VERCEL_ENV === 'production' && (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_'))) {
-    return NextResponse.json({ skip: true });
-  }
   try {
+    // Build-time safety check
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_')) {
+      return NextResponse.json({ skip: true });
+    }
+
     const { userId } = auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const { emails } = await req.json();
+
+    // Dynamic import to prevent build-time crashes
+    const { openai } = await import("@/lib/openai");
 
     const response = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
