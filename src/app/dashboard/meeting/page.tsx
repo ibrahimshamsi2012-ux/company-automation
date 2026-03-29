@@ -87,7 +87,7 @@ export default function MeetingPage() {
           data-lk-theme="default"
           className="flex-1 flex flex-col"
         >
-          {isAiEnabled && <MeetingAgent />}
+          {isAiEnabled && <MeetingAgent roomName={roomName} />}
           <VideoConference />
         </LiveKitRoom>
       </div>
