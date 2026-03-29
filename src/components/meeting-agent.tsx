@@ -75,7 +75,7 @@ export function MeetingAgent() {
           text: responseText
         }));
         
-        await localParticipant.publishData(data, DataPacket_Kind.RELIABLE);
+        await localParticipant.publishData(data, { reliable: true });
 
       } catch (error) {
         console.error("AI Agent Error:", error);
