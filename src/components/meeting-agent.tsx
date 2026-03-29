@@ -40,12 +40,14 @@ export function MeetingAgent() {
     };
 
     const handleAiResponse = async (query: string) => {
+      if (!localParticipant) return;
+      
       try {
         // 1. Get AI Text Response
-        const chatRes = await fetch("/api/ai/organize", { // Reusing logic for speed, or we can use a dedicated chat endpoint
+        const chatRes = await fetch("/api/email/organize", { // Fixed URL
           method: "POST",
           body: JSON.stringify({ 
-            emails: [{ subject: "Meeting Query", body: query }] // Adapting existing API schema
+            emails: [{ subject: "Meeting Query", body: query }] 
           })
         });
         

@@ -1,5 +1,3 @@
-import { AccessToken } from "livekit-server-sdk";
-
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -22,6 +20,9 @@ export async function POST(req: Request) {
     if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) {
       return new Response("LiveKit keys not configured", { status: 500 });
     }
+
+    // Dynamically import to prevent build-time crashes
+    const { AccessToken } = await import("livekit-server-sdk");
 
     // Create a token for the AI Robot
     const at = new AccessToken(
