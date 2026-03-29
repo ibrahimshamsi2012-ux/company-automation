@@ -33,10 +33,11 @@ export function MeetingAgent({ roomName }: { roomName: string }) {
         
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to get token");
+          throw new Error(errorData.error || "Neural Internal Error");
         }
 
-        const { token } = await res.json();
+        const data = await res.json();
+        const { token } = data;
 
         if (!isMounted) return;
 

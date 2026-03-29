@@ -18,11 +18,14 @@ export async function POST(req: Request) {
 
     // Check for LiveKit keys
     if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) {
-      return new Response("LiveKit keys not configured", { status: 500 });
+      return new Response(JSON.stringify({ error: "LiveKit API keys are missing in .env.local" }), { 
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
     }
 
     // Dynamically import to prevent build-time crashes
-    const { AccessToken } = await import("livekit-server-sdk");
+    const { AccessToken } = await inmport("livekit-server-sdk");
 
     // Create a token for the AI Robot
     const at = new AccessToken(
@@ -36,6 +39,7 @@ export async function POST(req: Request) {
 
     at.addGrant({
       roomJoin: true,
+      
       room: roomName,
       canPublish: true,
       canSubscribe: true,
