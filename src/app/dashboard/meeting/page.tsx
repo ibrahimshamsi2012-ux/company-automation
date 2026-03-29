@@ -4,6 +4,10 @@ import { useState } from "react";
 import { 
   LiveKitRoom, 
   VideoConference, 
+  GridLayout,
+  ParticipantTile,
+  ControlBar,
+  RoomAudioRenderer,
 } from "@livekit/components-react";
 import { motion } from "framer-motion";
 import { 
@@ -16,16 +20,19 @@ import {
   Monitor,
   Mic,
   ShieldCheck,
-  Globe
+  Globe,
+  Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import "@livekit/components-styles";
+import { MeetingAgent } from "@/components/meeting-agent";
 
 export default function MeetingPage() {
   const [token, setToken] = useState<string | null>(null);
   const [roomName, setRoomName] = useState("Boardroom-Alpha");
   const [isJoining, setIsJoining] = useState(false);
+  const [isAiEnabled, setIsAiEnabled] = useState(false);
 
   const joinMeeting = async () => {
     setIsJoining(true);
@@ -49,6 +56,17 @@ export default function MeetingPage() {
               <Video size={16} />
             </div>
             <h1 className="font-bold font-jakarta">{roomName}</h1>
+            <div className="h-4 w-px bg-white/10 mx-2" />
+            <button 
+              onClick={() => setIsAiEnabled(!isAiEnabled)}
+              className={cn(
+                "flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                isAiEnabled ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" : "bg-white/5 text-gray-400 hover:text-white"
+              )}
+            >
+              <Bot size={14} className={isAiEnabled ? "animate-pulse" : ""} />
+              <span>{isAiEnabled ? "AI Robot Active" : "Enable AI Robot"}</span>
+            </button>
           </div>
           <button 
             onClick={() => setToken(null)}
@@ -65,8 +83,9 @@ export default function MeetingPage() {
           token={token}
           serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
           data-lk-theme="default"
-          className="flex-1"
+          className="flex-1 flex flex-col"
         >
+          {isAiEnabled && <MeetingAgent />}
           <VideoConference />
         </LiveKitRoom>
       </div>
