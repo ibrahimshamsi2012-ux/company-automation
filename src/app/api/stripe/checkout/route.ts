@@ -56,9 +56,12 @@ export async function GET() {
       },
     });
 
-    return new NextResponse(JSON.stringify({ url: stripeSession.url }));
+    return new Response(JSON.stringify({ url: stripeSession.url }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.log("[STRIPE_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return new Response("Internal Error", { status: 500 });
   }
 }

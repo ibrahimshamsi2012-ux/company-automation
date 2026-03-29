@@ -35,9 +35,12 @@ export async function POST(req: Request) {
       response_format: { type: "json_object" },
     });
 
-    return NextResponse.json(JSON.parse(response.choices[0].message.content!));
+    return new Response(response.choices[0].message.content, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.log("[TASK_EXEC_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return new Response("Internal Error", { status: 500 });
   }
 }

@@ -33,9 +33,13 @@ export async function GET(req: Request) {
 
     at.addGrant({ roomJoin: true, room: room, canPublish: true, canSubscribe: true });
 
-    return NextResponse.json({ token: await at.toJwt() });
+    const token = await at.toJwt();
+    return new Response(JSON.stringify({ token }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.log("[MEETING_TOKEN_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return new Response("Internal Error", { status: 500 });
   }
 }
