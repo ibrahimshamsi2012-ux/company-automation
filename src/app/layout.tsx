@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkClientProvider } from "@/components/clerk-client-provider";
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   title: "AI Automate | Professional Company Automation",
   description: "Scale your company operations with AI-powered email management, task automation, and virtual meetings.",
 };
+
+export const dynamic = "force-dynamic";
 
 export default function RootLayout({
   children,
@@ -43,14 +45,9 @@ export default function RootLayout({
     </html>
   );
 
-  // If we're in build mode and keys might be dirty/missing, skip ClerkProvider to avoid atob crash
-  if (!hasClerkKey) {
-    return content;
-  }
-
   return (
-    <ClerkProvider>
+    <ClerkClientProvider hasClerkKey={hasClerkKey}>
       {content}
-    </ClerkProvider>
+    </ClerkClientProvider>
   );
 }
