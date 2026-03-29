@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import EligibilityTest from "@/components/eligibility-test";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, href: "/dashboard", active: true },
@@ -34,8 +36,37 @@ const stats = [
 ];
 
 export default function Dashboard() {
+  const [showEligibilityTest, setShowEligibilityTest] = useState(false);
+  const [isEligible, setIsEligible] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const eligibility = localStorage.getItem("ai_eligibility");
+    if (eligibility === "passed") {
+      setIsEligible(true);
+    } else if (eligibility === "failed") {
+      setIsEligible(false);
+      setShowEligibilityTest(true);
+    } else {
+      setShowEligibilityTest(true);
+    }
+  }, []);
+
+  const handleTestComplete = (passed: boolean) => {
+    localStorage.setItem("ai_eligibility", passed ? "passed" : "failed");
+    setIsEligible(passed);
+    if (passed) {
+      setShowEligibilityTest(false);
+    } else {
+      // Allow them to retry or handle as needed
+      window.location.reload();
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#030712] text-white overflow-hidden">
+      {showEligibilityTest && (
+        <EligibilityTest onComplete={handleTestComplete} />
+      )}
       {/* Sidebar */}
       <aside className="w-72 border-r border-white/5 bg-[#030712] flex flex-col">
         <div className="p-8">

@@ -73,6 +73,9 @@ export default function Home() {
             <a href="#stats" className="hover:text-white transition-colors">Enterprise</a>
           </div>
           <div className="flex items-center space-x-4">
+            <Link href="/privacy" className="text-sm font-medium hover:text-blue-400 transition-colors">
+              Privacy
+            </Link>
             <Link href="/dashboard" className="text-sm font-medium hover:text-blue-400 transition-colors">
               Sign In
             </Link>

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 const MOCK_EMAILS = [
   { id: 1, from: "John Doe", subject: "Quarterly Report Analysis", content: "Hi team, I've attached the latest performance metrics for Q1. Please review and let me know your thoughts by EOD.", type: "Real", category: "Internal", summary: "Requesting review of Q1 performance metrics.", time: "10:24 AM" },
@@ -28,9 +29,21 @@ const MOCK_EMAILS = [
 ];
 
 export default function EmailPage() {
+  const { user } = useUser();
   const [emails, setEmails] = useState(MOCK_EMAILS);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [isGmailConnected, setIsGmailConnected] = useState(false);
+
+  // Check if Gmail is connected via Clerk's external accounts
+  useEffect(() => {
+    if (user) {
+      const hasGmail = user.externalAccounts.some(
+        (acc) => acc.provider === "google" && acc.verification?.status === "verified"
+      );
+      setIsGmailConnected(hasGmail);
+    }
+  }, [user]);
 
   const analyzeEmails = () => {
     setIsAnalyzing(true);
@@ -48,6 +61,37 @@ export default function EmailPage() {
           </Link>
 
           <h1 className="text-3xl font-bold font-jakarta mb-8">Email Intelligence</h1>
+
+          <div className="space-y-6 mb-10">
+            <div className="p-5 glass-card rounded-[28px] border-white/5 bg-white/5">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  isGmailConnected ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
+                )}>
+                  <Mail size={20} />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-500">Google Sync</p>
+                  <p className="text-sm font-bold">{isGmailConnected ? "Connected" : "Disconnected"}</p>
+                </div>
+              </div>
+              
+              {!isGmailConnected ? (
+                <button 
+                  onClick={() => window.location.href = "https://accounts.google.com/o/oauth2/auth"} // Placeholder for Clerk OAuth flow
+                  className="w-full py-3 bg-white text-black rounded-2xl font-bold text-xs hover:bg-gray-200 transition-all shadow-xl shadow-white/5"
+                >
+                  Connect Gmail
+                </button>
+              ) : (
+                <div className="flex items-center space-x-2 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-2 rounded-xl border border-emerald-500/20">
+                  <CheckCircle size={12} />
+                  <span>Reading Real Mails...</span>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="space-y-2">
             {[
