@@ -25,8 +25,9 @@ for (const line of lines) {
       value = value.split(' #')[0].trim();
     }
     
-    // Remove surrounding quotes
-    value = value.replace(/^["'](.+)["']$/, '$1');
+    // Aggressively remove surrounding quotes AND ALL non-printable characters/whitespace
+    // This is the CRITICAL fix for the "Invalid character" atob build error
+    value = value.replace(/^["'](.+)["']$/, '$1').replace(/[^\x20-\x7E]/g, '').trim();
 
     if (key && value && !value.includes('YOUR_')) {
       varsToSync.push({ key, value });
