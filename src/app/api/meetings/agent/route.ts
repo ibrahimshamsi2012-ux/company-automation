@@ -50,6 +50,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("[AI_AGENT_TOKEN_ERROR]", error);
-    return new Response("Internal Error", { status: 500 });
+    return new Response(JSON.stringify({ error: "Internal Error" }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
