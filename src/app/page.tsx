@@ -93,6 +93,10 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative pt-40 pb-20 px-6 overflow-hidden">
+        {/* Decorative rotating globe behind hero */}
+        <div className="absolute inset-0 flex items-center justify-center -z-10 pointer-events-none">
+          <Globe size={600} className="text-blue-400 opacity-10 animate-spin [animation-duration:60s]" />
+        </div>
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -17,29 +17,26 @@ export async function POST(req: Request) {
 
     const { query, context } = await req.json();
 
-    // Dynamic import to prevent build-time crashes
-    const { openai } = await import("@/lib/openai");
+    // Use the ai-providers orchestrator which can call OpenAI and Google Gemini
+    const { getBestAiResponse } = await import("@/lib/ai-providers");
+    const responseText = await getBestAiResponse(query, context);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        {
-          role: "system",
-          content: "You are a highly intelligent AI Meeting Assistant, similar to Gemini or ChatGPT. Your goal is to provide concise, professional, and helpful responses to users during a live meeting. Keep your answers brief (under 3 sentences) since they will be spoken out loud. Be polite and proactive.",
-        },
-        {
-          role: "user",
-          content: `Question: ${query}\nMeeting Context: ${context || "Standard business meeting"}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 150,
-    });
+    const finalText = responseText || "I'm sorry, I couldn't process that.";
 
-    const responseText = response.choices[0].message.content || "I'm sorry, I couldn't process that.";
-
-    return new Response(JSON.stringify({ text: responseText }), {
+    return new Response(JSON.stringify({ text: finalText }), {
       status: 200,
+        // Quick dev bypass: if called with ?dev_bypass=1 return a canned response
+        try {
+          const url = new URL(req.url);
+          if (url.searchParams.get("dev_bypass") === "1") {
+            return new Response(JSON.stringify({ text: "This is a dev bypass response. Replace with real keys to enable full AI." }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+        } catch (e) {
+          // ignore URL parsing errors
+        }
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
