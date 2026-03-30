@@ -31,12 +31,10 @@ export function MeetingAgent({ roomName }: { roomName: string }) {
           headers: { "Content-Type": "application/json" }
         });
         
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Neural Internal Error");
-        }
-
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Neural Internal Error");
+        }
         const { token } = data;
 
         if (!isMounted) return;

@@ -39,7 +39,7 @@ export default function EmailPage() {
 
   // Check if Gmail is connected via Clerk's external accounts
   useEffect(() => {
-    if (user) {
+    if (user && user.externalAccounts) {
       const hasGmail = user.externalAccounts.some(
         (acc) => acc.provider === "google" && acc.verification?.status === "verified"
       );

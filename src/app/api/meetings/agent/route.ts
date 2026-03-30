@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     }
 
     // Dynamically import to prevent build-time crashes
-    const { AccessToken } = await inmport("livekit-server-sdk");
+    const { AccessToken } = await import("livekit-server-sdk");
 
     // Create a token for the AI Robot
     const at = new AccessToken(

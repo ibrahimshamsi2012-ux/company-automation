@@ -23,7 +23,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   // Build-time safety check for Clerk key
-  const isBuildMode = process.env.NODE_ENV === 'production' && !process.env.VERCEL;
   const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('YOUR_');
 
   const content = (
