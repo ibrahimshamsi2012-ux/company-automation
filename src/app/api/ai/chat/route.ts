@@ -2,6 +2,19 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    // Quick dev bypass: if called with ?dev_bypass=1 return a canned response
+    try {
+      const url = new URL(req.url);
+      if (url.searchParams.get("dev_bypass") === "1") {
+        return new Response(JSON.stringify({ text: "This is a dev bypass response. Replace with real keys to enable full AI." }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    } catch (e) {
+      // ignore URL parsing errors
+    }
+
     // Build-time safety check
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_')) {
       return new Response(JSON.stringify({ text: "AI is in maintenance mode. Please check your API keys." }), { status: 200 });
@@ -25,18 +38,6 @@ export async function POST(req: Request) {
 
     return new Response(JSON.stringify({ text: finalText }), {
       status: 200,
-        // Quick dev bypass: if called with ?dev_bypass=1 return a canned response
-        try {
-          const url = new URL(req.url);
-          if (url.searchParams.get("dev_bypass") === "1") {
-            return new Response(JSON.stringify({ text: "This is a dev bypass response. Replace with real keys to enable full AI." }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            });
-          }
-        } catch (e) {
-          // ignore URL parsing errors
-        }
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
