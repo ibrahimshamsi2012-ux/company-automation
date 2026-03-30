@@ -25,17 +25,16 @@ for (const line of lines) {
       value = value.split(' #')[0].trim();
     }
     
-    // Aggressively remove surrounding quotes AND ALL non-printable characters/whitespace
-    // This is the CRITICAL fix for the "Invalid character" atob build error
-    value = value.replace(/^["'](.+)["']$/, '$1').replace(/[^\x20-\x7E]/g, '').trim();
-
-    // Log which keys are being found for debugging
-    if (key.includes('LIVEKIT')) {
-      console.log(`  Found LiveKit Key: ${key}`);
+    // Aggressively clean value: remove quotes, remove ALL whitespace, remove non-printable chars
+    // Clerk keys are sensitive to hidden spaces and newlines
+    const cleanedValue = value.replace(/^["'](.+)["']$/, '$1').replace(/\s/g, '').replace(/[^\x20-\x7E]/g, '').trim();
+    
+    if (value !== cleanedValue) {
+      console.log(`  Cleaning ${key}... (Removed hidden characters)`);
     }
 
-    if (key && value && !value.includes('YOUR_')) {
-      varsToSync.push({ key, value });
+    if (key && cleanedValue && !cleanedValue.includes('YOUR_')) {
+      varsToSync.push({ key, value: cleanedValue });
     }
   }
 }
