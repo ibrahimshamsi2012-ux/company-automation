@@ -52,6 +52,19 @@ export default function EmailPage() {
     setTimeout(() => setIsAnalyzing(false), 2000);
   };
 
+  const connectGmail = async () => {
+    if (!user) return;
+    try {
+      // Create external account (Google) flow
+      await user.createExternalAccount({
+        provider: 'google',
+        redirectUrl: window.location.href,
+      });
+    } catch (err: any) {
+      console.error("Clerk OAuth Error:", err);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#030712] text-white overflow-hidden">
       {/* Sidebar Navigation */}
@@ -81,7 +94,7 @@ export default function EmailPage() {
               
               {!isGmailConnected ? (
                 <button 
-                  onClick={() => window.location.href = "https://accounts.google.com/o/oauth2/auth"} // Placeholder for Clerk OAuth flow
+                  onClick={connectGmail}
                   className="w-full py-3 bg-white text-black rounded-2xl font-bold text-xs hover:bg-gray-200 transition-all shadow-xl shadow-white/5"
                 >
                   Connect Gmail

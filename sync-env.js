@@ -29,6 +29,11 @@ for (const line of lines) {
     // This is the CRITICAL fix for the "Invalid character" atob build error
     value = value.replace(/^["'](.+)["']$/, '$1').replace(/[^\x20-\x7E]/g, '').trim();
 
+    // Log which keys are being found for debugging
+    if (key.includes('LIVEKIT')) {
+      console.log(`  Found LiveKit Key: ${key}`);
+    }
+
     if (key && value && !value.includes('YOUR_')) {
       varsToSync.push({ key, value });
     }
