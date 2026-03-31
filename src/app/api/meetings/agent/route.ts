@@ -39,8 +39,8 @@ export async function POST(req: Request) {
 
     // Create a token for the AI Robot
     const at = new AccessToken(
-      process.env.LIVEKIT_API_KEY,
-      process.env.LIVEKIT_API_SECRET,
+      apiKey,
+      apiSecret,
       {
         identity: "AI_ROBOT_AGENT",
         name: "AI Robot Assistant",
@@ -49,7 +49,6 @@ export async function POST(req: Request) {
 
     at.addGrant({
       roomJoin: true,
-      
       room: roomName,
       canPublish: true,
       canSubscribe: true,

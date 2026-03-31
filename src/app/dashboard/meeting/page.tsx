@@ -42,6 +42,8 @@ export default function MeetingPage() {
       const response = await fetch(`/api/meetings/token?room=${roomName}`);
       const data = await response.json();
       setToken(data.token);
+      // enable AI assistant by default after joining
+      setIsAiEnabled(true);
     } catch (error) {
       console.error("Error joining meeting", error);
     } finally {

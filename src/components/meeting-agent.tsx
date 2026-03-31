@@ -52,14 +52,19 @@ export function MeetingAgent({ roomName }: { roomName: string }) {
           const str = decoder.decode(payload);
           
           try {
-            const data = JSON.parse(str);
-            // Listen for specific trigger words or questions
-            if (data.type === "transcription" || str.toLowerCase().includes("robot") || str.toLowerCase().includes("hey ai") || str.endsWith("?")) {
-              await handleAiResponse(data.text || str);
-            }
+                const data = JSON.parse(str);
+                // Normalize incoming text and guard against undefined
+                const text = typeof str === "string" ? str : (data?.text ?? "");
+                const lower = text.toLowerCase();
+                // Listen for specific trigger words or questions
+                if (data?.type === "transcription" || lower.includes("robot") || lower.includes("hey ai") || text.endsWith("?")) {
+                  await handleAiResponse(data?.text || text);
+                }
           } catch (e) {
-            if (str.toLowerCase().includes("robot") || str.toLowerCase().includes("hey ai") || str.endsWith("?")) {
-              await handleAiResponse(str);
+            const text = typeof str === "string" ? str : "";
+            const lower = text.toLowerCase();
+            if (lower.includes("robot") || lower.includes("hey ai") || text.endsWith("?")) {
+              await handleAiResponse(text);
             }
           }
         };

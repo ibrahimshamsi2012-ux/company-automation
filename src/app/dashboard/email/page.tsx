@@ -57,8 +57,8 @@ export default function EmailPage() {
     try {
       // Create external account (Google) flow
       await user.createExternalAccount({
-        provider: 'google',
         redirectUrl: window.location.href,
+        strategy: "oauth_google",
       });
     } catch (err: any) {
       console.error("Clerk OAuth Error:", err);

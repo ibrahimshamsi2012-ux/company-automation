@@ -33,6 +33,20 @@ A powerful AI-driven platform for companies to automate their emails, tasks, and
     - `LIVEKIT_API_KEY`
     - `LIVEKIT_API_SECRET`
     - `NEXT_PUBLIC_LIVEKIT_URL`
+    - `GOOGLE_API_KEY` (optional - used to call Google Gemini / PaLM generative API)
+    - `GOOGLE_GEMINI_MODEL` (optional - defaults to `models/text-bison-001`)
+    - `PREFERRED_AI_PROVIDER` (optional - `openai`, `google`, or `auto`. Defaults to `auto`.)
+
+    Google sign-in (Clerk):
+    - To enable Google sign-in, go to your Clerk dashboard -> Your Application -> OAuth & Connections, enable Google, and provide the OAuth client ID/secret. Then set the following env vars in Vercel or your `.env.local`:
+        - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+        - `CLERK_SECRET_KEY`
+        - Configure Google OAuth in Clerk with your app's redirect URI (e.g., https://aiautomatedcompany2.vercel.app/* or http://localhost:3000/*)
+
+    Project Assessor API & UI:
+    - A new assessor endpoint exists at `/api/ai/assess`. Authenticated users can submit a `projectUrl`, `description`, and `email` to get an automated AI assessment. A simple frontend component is available at `src/components/project-assessor.tsx` for quick integration into your dashboard.
+
+    Security note: The assessor uses your configured AI provider keys; ensure `OPENAI_API_KEY` and any `GOOGLE_API_KEY` are set in your environment for real evaluations. There's a dev bypass available in the chat API for quick testing only; remove it before production.
 4.  Run the development server:
     ```bash
     npm run dev

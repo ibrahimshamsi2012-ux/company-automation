@@ -164,7 +164,7 @@ export default function TasksPage() {
                   <div className="space-y-6">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Neural Execution Steps</h4>
                     <div className="space-y-4">
-                      {result.steps.map((step: string, i: number) => (
+                      {(result.steps || []).map((step: string, i: number) => (
                         <motion.div 
                           key={i}
                           initial={{ opacity: 0, x: -10 }}
@@ -182,7 +182,7 @@ export default function TasksPage() {
                   <div className="space-y-8">
                     <div>
                       <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-3">Synthesis Outcome</h4>
-                      <p className="text-gray-100 font-medium leading-relaxed">{result.completed}</p>
+                              <p className="text-gray-100 font-medium leading-relaxed">{result.completed || ""}</p>
                     </div>
                     
                     <div className="glass-card p-6 rounded-3xl border-emerald-500/10 flex items-center space-x-4">
@@ -191,7 +191,7 @@ export default function TasksPage() {
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Efficiency Gain</p>
-                        <p className="text-xl font-bold text-emerald-400">{result.timeSaved} Saved</p>
+                        <p className="text-xl font-bold text-emerald-400">{result.timeSaved || "—"} Saved</p>
                       </div>
                     </div>
                   </div>
