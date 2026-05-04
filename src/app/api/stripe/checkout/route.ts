@@ -10,11 +10,10 @@ export async function GET() {
     }
 
     // Move Clerk inside to prevent build-time crashes
-    const { auth, currentUser } = await import("@clerk/nextjs");
+    const { auth } = await import("@clerk/nextjs");
     const { userId } = auth();
-    const user = await currentUser();
 
-    if (!userId || !user) {
+    if (!userId) {
       return new Response("Unauthorized", { status: 401 });
     }
 
@@ -28,7 +27,6 @@ export async function GET() {
       payment_method_types: ["card"],
       mode: "subscription",
       billing_address_collection: "auto",
-      customer_email: user.emailAddresses[0].emailAddress,
       line_items: [
         {
           price_data: {

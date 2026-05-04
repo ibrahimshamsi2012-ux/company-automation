@@ -10,11 +10,10 @@ export async function POST(req: Request) {
     }
 
     // Move Clerk inside to prevent build-time crashes
-    const { auth, currentUser } = await import("@clerk/nextjs");
+    const { auth } = await import("@clerk/nextjs");
     const { userId } = auth();
-    const user = await currentUser();
 
-    if (!userId || !user) {
+    if (!userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
@@ -28,7 +27,7 @@ export async function POST(req: Request) {
     const meetingData = await MeetingOrchestrator.createMeeting(
       roomName,
       userId,
-      `${user.firstName} ${user.lastName}`.trim() || user.username || "Guest"
+      "Guest-" + userId.slice(-4)
     );
 
     return new Response(JSON.stringify(meetingData), {

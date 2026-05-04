@@ -8,11 +8,10 @@ export async function GET(req: Request) {
     }
 
     // Move Clerk inside to prevent build-time crashes
-    const { auth, currentUser } = await import("@clerk/nextjs");
+    const { auth } = await import("@clerk/nextjs");
     const { userId } = auth();
-    const user = await currentUser();
 
-    if (!userId || !user) {
+    if (!userId) {
       return new Response("Unauthorized", { status: 401 });
     }
 
@@ -23,11 +22,11 @@ export async function GET(req: Request) {
     const { AccessToken } = await import("livekit-server-sdk");
 
     const at = new AccessToken(
-      process.env.LIVEKIT_API_KEY,
-      process.env.LIVEKIT_API_SECRET,
+      process.env.LIVEKIT_API_KEY!,
+      process.env.LIVEKIT_API_SECRET!,
       {
-        identity: user.id,
-        name: user.firstName + " " + user.lastName,
+        identity: userId,
+        name: "User-" + userId.slice(-4),
       }
     );
 

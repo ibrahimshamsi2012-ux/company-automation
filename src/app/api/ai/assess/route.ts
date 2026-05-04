@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   try {
     // Ensure auth
     const { auth } = await import("@clerk/nextjs");
-    const { userId, user } = auth();
+    const { userId } = auth();
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
