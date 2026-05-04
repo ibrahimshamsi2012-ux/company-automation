@@ -107,10 +107,19 @@ const stats = [
   { label: "AI Accuracy", value: "99.9%" },
 ];
 
+import { LoadingScreen } from "@/components/loading-screen";
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen relative overflow-x-hidden">
+      <LoadingScreen />
       <FloatingParticles />
+      
+      {/* Subtle Background Glows */}
+      <div className="fixed top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob pointer-events-none" />
+      <div className="fixed top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000 pointer-events-none" />
+      <div className="fixed -bottom-8 left-20 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-4000 pointer-events-none" />
+
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 glass-card border-none bg-[#030712]/50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">

@@ -1,14 +1,19 @@
 'use client';
 
 import { ClerkProvider } from '@clerk/nextjs';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 
 export function SafeClerkProvider({ children }: { children: ReactNode }) {
-  const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('YOUR_');
+  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const hasKey = key && !key.includes('YOUR_') && key.length > 0;
 
-  if (!hasClerkKey) {
+  if (!hasKey) {
     return <>{children}</>;
   }
 
-  return <ClerkProvider>{children}</ClerkProvider>;
+  return (
+    <ClerkProvider publishableKey={key}>
+      {children}
+    </ClerkProvider>
+  );
 }
