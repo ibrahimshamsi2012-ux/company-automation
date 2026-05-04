@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   useRoomContext,
-  useTranscription,
+  useTranscriptions,
 } from "@livekit/components-react";
 import { Room, RoomEvent } from "livekit-client";
 import { Bot, AlertCircle, Loader2 } from "lucide-react";
@@ -22,7 +22,7 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const agentRoomRef = useRef<Room | null>(null);
-  const transcription = useTranscription();
+  const segments = useTranscriptions();
 
   const handleAiResponse = useCallback(async (query: string) => {
     if (agentStatus === "speaking" || !query.trim()) return;
@@ -85,16 +85,16 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
 
   // Listen for transcriptions
   useEffect(() => {
-    if (!transcription || transcription.segments.length === 0) return;
+    if (!segments || segments.length === 0) return;
     
-    const lastSegment = transcription.segments[transcription.segments.length - 1];
+    const lastSegment = segments[segments.length - 1];
     if (lastSegment.final && lastSegment.text) {
       const text = lastSegment.text.toLowerCase();
       if (text.includes("robot") || text.includes("assistant") || text.includes("ai")) {
         handleAiResponse(lastSegment.text);
       }
     }
-  }, [transcription, handleAiResponse]);
+  }, [segments, handleAiResponse]);
 
   useEffect(() => {
     let isMounted = true;
