@@ -20,26 +20,45 @@ import {
   ZapOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 
 const FloatingParticles = () => {
+  const [mounted, setMounted] = useState(false);
+  const [particles, setParticles] = useState<any[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+    const newParticles = [...Array(20)].map((_, i) => ({
+      id: i,
+      initialX: Math.random() * 2000 - 1000,
+      initialY: Math.random() * 2000 - 1000,
+      animateX: Math.random() * 2000 - 1000,
+      animateY: Math.random() * 2000 - 1000,
+      opacity: Math.random() * 0.5,
+      duration: Math.random() * 20 + 20,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(20)].map((_, i) => (
+      {particles.map((p) => (
         <motion.div
-          key={i}
+          key={p.id}
           initial={{ 
-            opacity: Math.random() * 0.5, 
-            x: Math.random() * 2000 - 1000, 
-            y: Math.random() * 2000 - 1000 
+            opacity: p.opacity, 
+            x: p.initialX, 
+            y: p.initialY 
           }}
           animate={{ 
-            x: Math.random() * 2000 - 1000, 
-            y: Math.random() * 2000 - 1000,
+            x: p.animateX, 
+            y: p.animateY,
             opacity: [0.1, 0.4, 0.1]
           }}
           transition={{ 
-            duration: Math.random() * 20 + 20, 
+            duration: p.duration, 
             repeat: Infinity, 
             ease: "linear" 
           }}
