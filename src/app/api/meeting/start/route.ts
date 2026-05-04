@@ -1,5 +1,3 @@
-import { auth, currentUser } from "@clerk/nextjs";
-import { MeetingOrchestrator } from "@/lib/meeting-orchestrator";
 import { logger } from "@/lib/logger";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 
@@ -11,6 +9,8 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: "Meeting automation is disabled" }), { status: 403 });
     }
 
+    // Move Clerk inside to prevent build-time crashes
+    const { auth, currentUser } = await import("@clerk/nextjs");
     const { userId } = auth();
     const user = await currentUser();
 
@@ -23,6 +23,8 @@ export async function POST(req: Request) {
 
     logger.info(`Starting meeting request for room: ${roomName}`);
 
+    // Dynamic import to prevent build-time crashes
+    const { MeetingOrchestrator } = await import("@/lib/meeting-orchestrator");
     const meetingData = await MeetingOrchestrator.createMeeting(
       roomName,
       userId,
