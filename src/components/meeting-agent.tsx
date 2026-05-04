@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { 
   useRoomContext,
-  useTranscriptions,
+  useTranscriptions, // Neural Update: Plural hook
 } from "@livekit/components-react";
 import { Room, RoomEvent } from "livekit-client";
 import { Bot, AlertCircle, Loader2 } from "lucide-react";
