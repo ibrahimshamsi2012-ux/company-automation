@@ -85,10 +85,11 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
 
   // Listen for transcriptions
   useEffect(() => {
-    if (!segments || segments.length === 0) return;
+    const transcriptionSegments = Array.isArray(segments) ? segments : [];
+    if (transcriptionSegments.length === 0) return;
     
-    const lastSegment = segments[segments.length - 1];
-    if (lastSegment.final && lastSegment.text) {
+    const lastSegment = transcriptionSegments[transcriptionSegments.length - 1];
+    if (lastSegment && lastSegment.final && lastSegment.text) {
       const text = lastSegment.text.toLowerCase();
       if (text.includes("robot") || text.includes("assistant") || text.includes("ai")) {
         handleAiResponse(lastSegment.text);
