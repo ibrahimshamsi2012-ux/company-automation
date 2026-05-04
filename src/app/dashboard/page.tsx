@@ -33,13 +33,59 @@ const navItems = [
   { label: "Boardroom", icon: Video, href: "/dashboard/meeting", feature: 'MEETING_AUTOMATION' },
 ];
 
+function UserNav() {
+  const clerk = useUser();
+  const user = clerk?.user;
+  const isEligible = typeof localStorage !== 'undefined' ? localStorage.getItem("ai_eligibility") === "passed" : false;
+
+  return (
+    <div className="flex items-center space-x-3 px-2 py-3">
+      <UserButton afterSignOutUrl="/" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold truncate">{user?.fullName || user?.username || "Neural Operator"}</p>
+        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">
+          {isEligible ? "Verified Node" : "Awaiting Verification"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function WelcomeBanner() {
+  const { user } = useUser();
+  return (
+    <div className="relative p-12 rounded-[40px] bg-gradient-to-br from-blue-600 to-indigo-900 overflow-hidden shadow-2xl shadow-blue-500/20">
+      <div className="absolute top-0 right-0 p-12 opacity-10">
+        <ShieldCheck size={200} />
+      </div>
+      <div className="relative z-10 max-w-2xl">
+        <h1 className="text-5xl font-bold font-jakarta mb-4 leading-tight">
+          Welcome back, <br />{user?.firstName || "Operator"}.
+        </h1>
+        <p className="text-blue-100/70 text-lg font-medium mb-8">
+          Your neural company is running at <span className="text-white font-bold">99.8% efficiency</span>. 12 active automations are currently processing data.
+        </p>
+        <div className="flex items-center space-x-4">
+          <Link href="/dashboard/tasks" className="px-8 py-3 bg-white text-black rounded-2xl font-bold hover:bg-gray-100 transition-all shadow-lg">
+            Manage Automations
+          </Link>
+          <button className="px-8 py-3 bg-white/10 text-white rounded-2xl font-bold hover:bg-white/20 transition-all backdrop-blur-md border border-white/10">
+            System Health
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const { user, isLoaded } = useUser();
+  const [isMounted, setIsMounted] = useState(false);
   const [showEligibilityTest, setShowEligibilityTest] = useState(false);
   const [isEligible, setIsEligible] = useState<boolean | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const eligibility = localStorage.getItem("ai_eligibility");
     if (eligibility === "passed") {
       setIsEligible(true);
@@ -50,6 +96,8 @@ export default function Dashboard() {
       setShowEligibilityTest(true);
     }
   }, []);
+
+  const hasClerk = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('YOUR_');
 
   const handleTestComplete = (passed: boolean) => {
     localStorage.setItem("ai_eligibility", passed ? "passed" : "failed");
@@ -72,7 +120,7 @@ export default function Dashboard() {
     }
   };
 
-  if (!isLoaded) return null;
+  if (!isMounted) return null;
 
   return (
     <div className="flex h-screen bg-[#030712] text-white overflow-hidden">
@@ -133,15 +181,17 @@ export default function Dashboard() {
         </div>
 
         <div className="p-6 border-t border-white/5">
-          <div className="flex items-center space-x-3 px-2 py-3">
-            <UserButton afterSignOutUrl="/" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold truncate">{user?.fullName || user?.username}</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">
-                {isEligible ? "Verified Node" : "Awaiting Verification"}
-              </p>
+          {hasClerk ? (
+            <UserNav />
+          ) : (
+            <div className="flex items-center space-x-3 px-2 py-3 grayscale opacity-50">
+              <div className="w-8 h-8 bg-white/10 rounded-full" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate">Neural Operator</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Guest Mode</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </aside>
 
@@ -174,27 +224,25 @@ export default function Dashboard() {
         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
           <div className="max-w-7xl mx-auto space-y-10">
             {/* Welcome Banner */}
-            <div className="relative p-12 rounded-[40px] bg-gradient-to-br from-blue-600 to-indigo-900 overflow-hidden shadow-2xl shadow-blue-500/20">
-              <div className="absolute top-0 right-0 p-12 opacity-10">
-                <ShieldCheck size={200} />
-              </div>
-              <div className="relative z-10 max-w-2xl">
-                <h1 className="text-5xl font-bold font-jakarta mb-4 leading-tight">
-                  Welcome back, <br />{user?.firstName || "Operator"}.
-                </h1>
-                <p className="text-blue-100/70 text-lg font-medium mb-8">
-                  Your neural company is running at <span className="text-white font-bold">99.8% efficiency</span>. 12 active automations are currently processing data.
-                </p>
-                <div className="flex items-center space-x-4">
-                  <Link href="/dashboard/tasks" className="px-8 py-3 bg-white text-black rounded-2xl font-bold hover:bg-gray-100 transition-all shadow-lg">
-                    Manage Automations
-                  </Link>
-                  <button className="px-8 py-3 bg-white/10 text-white rounded-2xl font-bold hover:bg-white/20 transition-all backdrop-blur-md border border-white/10">
-                    System Health
-                  </button>
+            {hasClerk ? (
+              <WelcomeBanner />
+            ) : (
+              <div className="relative p-12 rounded-[40px] bg-gradient-to-br from-blue-600/50 to-indigo-900/50 overflow-hidden shadow-2xl border border-white/5 grayscale">
+                <div className="relative z-10 max-w-2xl">
+                  <h1 className="text-5xl font-bold font-jakarta mb-4 leading-tight">
+                    Welcome back, <br />Operator.
+                  </h1>
+                  <p className="text-blue-100/70 text-lg font-medium mb-8">
+                    Your neural company is running in <span className="text-white font-bold">Safe Mode</span>. Sign in to unlock full efficiency and active automations.
+                  </p>
+                  <div className="flex items-center space-x-4">
+                    <Link href="/dashboard" className="px-8 py-3 bg-white text-black rounded-2xl font-bold hover:bg-gray-100 transition-all">
+                      Sign In Now
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
