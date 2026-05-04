@@ -23,17 +23,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Build-time safety check for Clerk key
-  const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('YOUR_');
-
   return (
-    <SafeClerkProvider>
-      <html lang="en" className="scroll-smooth">
-        <body className={cn(
-          "min-h-screen bg-[#030712] text-white font-sans antialiased",
-          inter.variable,
-          jakarta.variable
-        )}>
+    <html lang="en" className="scroll-smooth">
+      <body className={cn(
+        "min-h-screen bg-[#030712] text-white font-sans antialiased",
+        inter.variable,
+        jakarta.variable
+      )}>
+        <SafeClerkProvider>
           <div className="relative flex min-h-screen flex-col">
             <LoadingScreen />
             {/* Subtle Background Glows */}
@@ -43,8 +40,8 @@ export default function RootLayout({
             
             <main className="flex-1 relative z-10">{children}</main>
           </div>
-        </body>
-      </html>
-    </SafeClerkProvider>
+        </SafeClerkProvider>
+      </body>
+    </html>
   );
 }

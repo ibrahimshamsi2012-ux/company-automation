@@ -5,12 +5,16 @@ import { Sparkles, Brain } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export function LoadingScreen() {
+  const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    setMounted(true);
     const timer = setTimeout(() => setIsVisible(false), 2500);
     return () => clearTimeout(timer);
   }, []);
+
+  if (!mounted) return null;
 
   return (
     <AnimatePresence>

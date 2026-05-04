@@ -12,7 +12,7 @@ export function SafeClerkProvider({ children }: { children: ReactNode }) {
   }, []);
 
   if (!mounted) {
-    return <div style={{ visibility: 'hidden' }}>{children}</div>;
+    return <>{children}</>;
   }
 
   if (!hasClerkKey) {
