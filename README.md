@@ -37,6 +37,44 @@ A powerful AI-driven platform for companies to automate their emails, tasks, and
     - `GOOGLE_GEMINI_MODEL` (optional - defaults to `models/text-bison-001`)
     - `PREFERRED_AI_PROVIDER` (optional - `openai`, `google`, or `auto`. Defaults to `auto`.)
 
+    ## Integrations
+
+    This project can integrate with external providers for auth, AI, realtime meetings, payments, analytics, email, storage and database. Add the following environment variables and follow the provider docs to obtain keys.
+
+    - Google Cloud (OAuth / Authentication):
+        - `GOOGLE_CLIENT_ID`
+        - `GOOGLE_CLIENT_SECRET`
+        - `GOOGLE_OAUTH_REDIRECT` (your app URL + callback)
+
+    - OpenAI (AI):
+        - `OPENAI_API_KEY`
+
+    - LiveKit (Realtime meetings):
+        - `NEXT_PUBLIC_LIVEKIT_URL` (e.g. wss://your-livekit.server)
+        - `LIVEKIT_API_KEY`
+        - `LIVEKIT_API_SECRET`
+
+    - Stripe (Payments):
+        - `STRIPE_SECRET_KEY`
+        - `STRIPE_WEBHOOK_SECRET`
+
+    - PostHog (Product analytics):
+        - `POSTHOG_API_KEY`
+        - `POSTHOG_API_HOST` (optional, defaults to https://app.posthog.com)
+
+    - Resend (Transactional email):
+        - `RESEND_API_KEY`
+
+    - MongoDB (Database):
+        - `MONGODB_URI`
+
+    - Cloudinary (Media hosting):
+        - `CLOUDINARY_CLOUD_NAME`
+        - `CLOUDINARY_API_KEY`
+        - `CLOUDINARY_API_SECRET`
+
+    Minimal server-side helpers are provided under `src/app/api/integrations/` as lightweight REST wrappers that call provider HTTP APIs. These are meant as examples — replace or extend them to match production needs and secure secrets in your hosting provider (Vercel, etc.).
+
     Google sign-in (Clerk):
     - To enable Google sign-in, go to your Clerk dashboard -> Your Application -> OAuth & Connections, enable Google, and provide the OAuth client ID/secret. Then set the following env vars in Vercel or your `.env.local`:
         - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`

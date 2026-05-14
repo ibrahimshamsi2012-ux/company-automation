@@ -5,7 +5,7 @@ import {
   useRoomContext,
   useTranscriptions, // Neural Update: Plural hook
 } from "@livekit/components-react";
-import { Room, RoomEvent } from "livekit-client";
+import { ConnectionState, LocalAudioTrack, RoomEvent, Track } from "livekit-client";
 import { Bot, AlertCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -15,13 +15,19 @@ interface MeetingAgentProps {
   agentToken?: string;
 }
 
+const AGENT_TTS_TRACK_NAME = "neural-assistant-tts";
+
 export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
   const mainRoom = useRoomContext();
   const [agentStatus, setAgentStatus] = useState<"connecting" | "online" | "speaking" | "error">("connecting");
   const [lastMessage, setLastMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const agentRoomRef = useRef<Room | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const destinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const publishedTrackRef = useRef<LocalAudioTrack | null>(null);
+  const effectGenerationRef = useRef(0);
   const segments = useTranscriptions();
 
   const handleAiResponse = useCallback(async (query: string) => {
@@ -72,9 +78,7 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
         sender: "NEURAL_AI"
       }));
       
-      if (agentRoomRef.current) {
-        await agentRoomRef.current.localParticipant.publishData(data, { reliable: true });
-      }
+      await mainRoom.localParticipant.publishData(data, { reliable: true });
 
       setAgentStatus("online");
     } catch (error: any) {
@@ -99,63 +103,132 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
 
   useEffect(() => {
     let isMounted = true;
+    const generation = ++effectGenerationRef.current;
 
-    const setupAgent = async () => {
+    const unpublishAgentTrack = async () => {
+      const lp = mainRoom.localParticipant;
+      const t = publishedTrackRef.current;
+      if (t) {
+        try {
+          await lp.unpublishTrack(t);
+        } catch {
+          /* already gone */
+        }
+        t.stop();
+        publishedTrackRef.current = null;
+      }
+      const namedPub = lp.getTrackPublicationByName(AGENT_TTS_TRACK_NAME);
+      if (namedPub?.track) {
+        try {
+          await lp.unpublishTrack(namedPub.track);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+
+    const setupInCurrentRoom = async () => {
       try {
         setAgentStatus("connecting");
-        
-        let token = agentToken;
-        if (!token) {
-          const res = await fetch("/api/meetings/agent", {
-            method: "POST",
-            body: JSON.stringify({ roomName }),
-            headers: { "Content-Type": "application/json" }
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Agent token failure");
-          token = data.token;
+        if (mainRoom.state !== ConnectionState.Connected) {
+          return;
         }
 
-        if (!token || !isMounted) return;
+        await unpublishAgentTrack();
 
-        const agentRoom = new Room();
-        agentRoomRef.current = agentRoom;
+        // Publish synthesized speech into the existing meeting room.
+        // Use Track.Source.Unknown (not Microphone): LiveKitRoom already publishes the user's mic;
+        // a second microphone track triggers "a track with the same ID has already been published".
+        if (!audioContextRef.current) {
+          audioContextRef.current = new AudioContext();
+        }
+        if (!audioRef.current) {
+          audioRef.current = new Audio();
+        }
+        if (!destinationRef.current) {
+          destinationRef.current = audioContextRef.current.createMediaStreamDestination();
+        }
+        if (!mediaNodeRef.current) {
+          mediaNodeRef.current = audioContextRef.current.createMediaElementSource(audioRef.current);
+          mediaNodeRef.current.connect(destinationRef.current);
+          mediaNodeRef.current.connect(audioContextRef.current.destination);
+        }
+        const sourceTrack = destinationRef.current.stream.getAudioTracks()[0];
+        if (sourceTrack) {
+          const localTrack = new LocalAudioTrack(sourceTrack, undefined, true);
+          await mainRoom.localParticipant.publishTrack(localTrack, {
+            source: Track.Source.Unknown,
+            name: AGENT_TTS_TRACK_NAME,
+          });
+          publishedTrackRef.current = localTrack;
+        }
 
-        const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "wss://company-automation-dnyrj2vt.livekit.cloud";
-        await agentRoom.connect(livekitUrl, token);
-        
-        if (isMounted) setAgentStatus("online");
-
-        agentRoom.on(RoomEvent.DataReceived, (payload) => {
-          const str = new TextDecoder().decode(payload);
-          try {
-            const data = JSON.parse(str);
-            if (data.type === "trigger_ai") {
-              handleAiResponse(data.text);
-            }
-          } catch (e) {
-            // Not JSON
-          }
-        });
-
+        if (isMounted && generation === effectGenerationRef.current) {
+          setAgentStatus("online");
+        }
       } catch (error: any) {
         console.error("Agent Init Error:", error);
-        if (isMounted) {
+        const msg = String(error?.message || "");
+        if (
+          msg.includes("same ID") ||
+          msg.includes("already been published")
+        ) {
+          if (isMounted && generation === effectGenerationRef.current) {
+            setAgentStatus("online");
+          }
+          return;
+        }
+        if (isMounted && generation === effectGenerationRef.current) {
           setAgentStatus("error");
           setErrorMessage(error.message || "Neural Link Failed");
         }
       }
     };
 
-    setupAgent();
+    const onConnected = () => {
+      void setupInCurrentRoom();
+    };
+    const onData = (payload: Uint8Array) => {
+      const str = new TextDecoder().decode(payload);
+      try {
+        const data = JSON.parse(str);
+        if (data.type === "trigger_ai") {
+          void handleAiResponse(data.text);
+        }
+      } catch (_e) {
+        // Ignore non-JSON payloads.
+      }
+    };
+
+    void setupInCurrentRoom();
+    mainRoom.on(RoomEvent.Connected, onConnected);
+    mainRoom.on(RoomEvent.DataReceived, onData);
 
     return () => {
       isMounted = false;
-      if (agentRoomRef.current) {
-        agentRoomRef.current.disconnect();
+      mainRoom.off(RoomEvent.Connected, onConnected);
+      mainRoom.off(RoomEvent.DataReceived, onData);
+      void (async () => {
+        const lp = mainRoom.localParticipant;
+        const t = publishedTrackRef.current;
+        if (t) {
+          try {
+            await lp.unpublishTrack(t);
+          } catch {
+            /* ignore */
+          }
+          t.stop();
+          publishedTrackRef.current = null;
+        }
+      })();
+      mediaNodeRef.current = null;
+      destinationRef.current = null;
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
       }
     };
-  }, [roomName, agentToken, handleAiResponse]);
+  }, [mainRoom, handleAiResponse, roomName, agentToken]);
 
   return (
     <div className="absolute bottom-24 right-8 z-50">

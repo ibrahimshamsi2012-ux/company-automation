@@ -1,9 +1,15 @@
 import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 import { logger } from "./logger";
+import { getLivekitApiKey, getLivekitApiSecret, getLivekitUrl } from "./livekit-config";
 
-const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || 'API6wom28Fob9ba';
-const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || 'ozQJys6BeGvsmhMyLu3zsVDkPaWAUT6JsQtzVvW2vcY';
-const LIVEKIT_URL = process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://company-automation-dnyrj2vt.livekit.cloud';
+const LIVEKIT_API_KEY = getLivekitApiKey();
+const LIVEKIT_API_SECRET = getLivekitApiSecret();
+const LIVEKIT_URL = getLivekitUrl();
+
+function sanitizeIdentity(input: string): string {
+  const safe = (input || "").replace(/[^a-zA-Z0-9_.-]/g, "_").slice(0, 120);
+  return safe || `guest_${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export class MeetingOrchestrator {
   private static roomService = new RoomServiceClient(
@@ -15,22 +21,25 @@ export class MeetingOrchestrator {
   static async createMeeting(roomName: string, userId: string, userName: string) {
     try {
       logger.info(`Orchestrating meeting: ${roomName} for user: ${userId}`);
+      const safeUserId = sanitizeIdentity(userId);
+      const safeRoom = roomName.replace(/[^a-zA-Z0-9_-]/g, "") || `Meeting-${Math.random().toString(36).slice(2, 9)}`;
+      const safeUserName = (userName || "Guest").trim().slice(0, 80);
 
       // 1. Ensure room exists (LiveKit creates on join, but we can manage it)
-      await this.roomService.listRooms([roomName]).catch(e => {
+      await this.roomService.listRooms([safeRoom]).catch(e => {
         logger.warn(`Room listing error: ${e.message}`);
         return [];
       });
 
       // 2. Generate Host Token
       const hostToken = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
-        identity: userId,
-        name: userName,
+        identity: safeUserId,
+        name: safeUserName,
       });
 
       hostToken.addGrant({
         roomJoin: true,
-        room: roomName,
+        room: safeRoom,
         canPublish: true,
         canSubscribe: true,
         canPublishData: true,
@@ -38,20 +47,20 @@ export class MeetingOrchestrator {
 
       // 3. Generate Agent Token
       const agentToken = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
-        identity: `AGENT_${roomName}`,
+        identity: sanitizeIdentity(`AGENT_${safeRoom}`),
         name: "AI Assistant",
       });
 
       agentToken.addGrant({
         roomJoin: true,
-        room: roomName,
+        room: safeRoom,
         canPublish: true,
         canSubscribe: true,
         canPublishData: true,
       });
 
       return {
-        roomName,
+        roomName: safeRoom,
         hostToken: await hostToken.toJwt(),
         agentToken: await agentToken.toJwt(),
         url: LIVEKIT_URL,

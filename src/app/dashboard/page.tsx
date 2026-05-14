@@ -24,6 +24,7 @@ import { ProjectAssessor } from "@/components/project-assessor";
 import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { hasValidClerkPublishableKey } from "@/lib/clerk";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, href: "/dashboard", active: true, feature: null },
@@ -97,7 +98,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  const hasClerk = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes('YOUR_');
+  const hasClerk = hasValidClerkPublishableKey(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
   const handleTestComplete = (passed: boolean) => {
     localStorage.setItem("ai_eligibility", passed ? "passed" : "failed");

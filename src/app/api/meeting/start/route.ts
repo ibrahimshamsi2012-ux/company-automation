@@ -2,6 +2,17 @@ import { logger } from "@/lib/logger";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+function sanitizeRoomName(input?: string): string {
+  const raw = (input || "").trim();
+  const safe = raw.replace(/[^a-zA-Z0-9_-]/g, "");
+  return safe || `Meeting-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function createGuestId(): string {
+  return `guest_${Math.random().toString(36).slice(2, 12)}`;
+}
 
 export async function POST(req: Request) {
   try {
@@ -9,16 +20,18 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: "Meeting automation is disabled" }), { status: 403 });
     }
 
-    // Move Clerk inside to prevent build-time crashes
-    const { auth } = await import("@clerk/nextjs");
-    const { userId } = auth();
-
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    let userId: string | null = null;
+    try {
+      // Keep Clerk optional for launch reliability across devices/extensions.
+      const { auth } = await import("@clerk/nextjs");
+      userId = auth()?.userId || null;
+    } catch (authError: any) {
+      logger.warn(`[API_MEETING_START_AUTH_WARN] ${authError?.message || "Auth parse failed"}`);
     }
 
     const body = await req.json().catch(() => ({}));
-    const roomName = body.roomName || `Meeting-${Math.random().toString(36).substring(7)}`;
+    const roomName = sanitizeRoomName(body.roomName);
+    const effectiveUserId = userId || createGuestId();
 
     logger.info(`Starting meeting request for room: ${roomName}`);
 
@@ -26,8 +39,8 @@ export async function POST(req: Request) {
     const { MeetingOrchestrator } = await import("@/lib/meeting-orchestrator");
     const meetingData = await MeetingOrchestrator.createMeeting(
       roomName,
-      userId,
-      "Guest-" + userId.slice(-4)
+      effectiveUserId,
+      `Guest-${effectiveUserId.slice(-4)}`
     );
 
     return new Response(JSON.stringify(meetingData), {

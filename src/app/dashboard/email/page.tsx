@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import { hasValidClerkPublishableKey } from "@/lib/clerk";
 
 const MOCK_EMAILS = [
   { id: 1, from: "John Doe", subject: "Quarterly Report Analysis", content: "Hi team, I've attached the latest performance metrics for Q1. Please review and let me know your thoughts by EOD.", type: "Real", category: "Internal", summary: "Requesting review of Q1 performance metrics.", time: "10:24 AM" },
@@ -30,8 +31,8 @@ const MOCK_EMAILS = [
   { id: 4, from: "Sarah Williams", subject: "Client Meeting Notes", content: "Great session today! Here are the key takeaways from our meeting with the Global Tech team. They are ready to move forward.", type: "Real", category: "Clients", summary: "Summary of successful client meeting with Global Tech.", time: "Yesterday" },
 ];
 
-export default function EmailPage() {
-  const { user } = useUser();
+function EmailPageContent({ user, isLoaded = true }: { user: any, isLoaded?: boolean }) {
+  const hasClerk = hasValidClerkPublishableKey(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
   const [emails, setEmails] = useState(MOCK_EMAILS);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
@@ -39,13 +40,21 @@ export default function EmailPage() {
 
   // Check if Gmail is connected via Clerk's external accounts
   useEffect(() => {
-    if (user && user.externalAccounts) {
-      const hasGmail = user.externalAccounts.some(
-        (acc) => acc.provider === "google" && acc.verification?.status === "verified"
-      );
-      setIsGmailConnected(hasGmail);
+    if (!isLoaded) return;
+    try {
+      if (user && user.externalAccounts) {
+        const hasGmail = user.externalAccounts.some(
+          (acc) => acc.provider === "google" && acc.verification?.status === "verified"
+        );
+        setIsGmailConnected(hasGmail);
+      } else {
+        setIsGmailConnected(false);
+      }
+    } catch (err) {
+      console.error("Error checking external accounts:", err);
+      setIsGmailConnected(false);
     }
-  }, [user]);
+  }, [user, isLoaded]);
 
   const analyzeEmails = async () => {
     if (isAnalyzing) return;
@@ -87,15 +96,25 @@ export default function EmailPage() {
   };
 
   const connectGmail = async () => {
-    if (!user) return;
+    if (!isLoaded) return setErrorMessage("User not loaded yet");
+    if (!user) return setErrorMessage("You must be signed in to connect Gmail");
+    if (!hasClerk) return setErrorMessage("Clerk not configured to allow external accounts");
+
+    // Some Clerk SDK instances may not expose createExternalAccount client-side
+    const createExt = (user as any)?.createExternalAccount;
+    if (typeof createExt !== "function") {
+      setErrorMessage("Clerk external account flow not available in this environment. Enable external connections in Clerk dashboard.");
+      return;
+    }
+
     try {
-      // Create external account (Google) flow
-      await user.createExternalAccount({
-        redirectUrl: window.location.href,
+      await createExt({
+        redirectUrl: typeof window !== "undefined" ? window.location.href : "",
         strategy: "oauth_google",
       });
     } catch (err: any) {
       console.error("Clerk OAuth Error:", err);
+      setErrorMessage(err?.message || "OAuth error");
     }
   };
 
@@ -129,9 +148,10 @@ export default function EmailPage() {
               {!isGmailConnected ? (
                 <button 
                   onClick={connectGmail}
+                  disabled={!hasClerk}
                   className="w-full py-3 bg-white text-black rounded-2xl font-bold text-xs hover:bg-gray-200 transition-all shadow-xl shadow-white/5"
                 >
-                  Connect Gmail
+                  {hasClerk ? "Connect Gmail" : "Configure Clerk to Connect"}
                 </button>
               ) : (
                 <div className="flex items-center space-x-2 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-2 rounded-xl border border-emerald-500/20">
@@ -293,4 +313,17 @@ export default function EmailPage() {
       </main>
     </div>
   );
+}
+
+function EmailPageWithClerk() {
+  const { user, isLoaded } = useUser();
+  return <EmailPageContent user={user} isLoaded={isLoaded} />;
+}
+
+export default function EmailPage() {
+  const hasClerk = hasValidClerkPublishableKey(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+  if (!hasClerk) {
+    return <EmailPageContent user={null} />;
+  }
+  return <EmailPageWithClerk />;
 }
