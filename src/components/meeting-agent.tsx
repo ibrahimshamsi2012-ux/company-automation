@@ -40,16 +40,22 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
       // 2. AI Chat Completion
       const chatRes = await fetch("/api/ai/chat", {
         method: "POST",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           query,
           context: `Meeting: ${roomName}`
         }),
         headers: { "Content-Type": "application/json" }
       });
-      
-      const chatData = await chatRes.json();
-      if (!chatRes.ok) throw new Error(chatData.error || "AI Synthesis failed");
-      
+
+      if (!chatRes.ok) {
+        const bodyText = await chatRes.text().catch(() => "");
+        console.error("Chat API returned non-OK:", chatRes.status, bodyText);
+        setLastMessage("Sorry, the AI service is unavailable right now.");
+        setAgentStatus("online");
+        return;
+      }
+
+      const chatData = await chatRes.json().catch(() => ({}));
       const responseText = chatData.text || "Neural connection active.";
       setLastMessage(responseText);
 
@@ -67,7 +73,9 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
       
       if (audioRef.current) {
         audioRef.current.src = audioUrl;
-        await audioRef.current.play();
+        audioRef.current.play().catch((e) => {
+          console.warn("Audio play failed:", e);
+        });
       }
 
       // 4. Broadcast response to meeting
@@ -78,7 +86,29 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
         sender: "NEURAL_AI"
       }));
       
-      await mainRoom.localParticipant.publishData(data, { reliable: true });
+      // Publish data to main room with retries and guards
+      try {
+        const lp = mainRoom?.localParticipant;
+        if (!lp) throw new Error("localParticipant not available");
+
+        let attempts = 0;
+        let published = false;
+        while (attempts < 3 && !published) {
+          try {
+            await lp.publishData(data, { reliable: true });
+            published = true;
+          } catch (pubErr) {
+            attempts++;
+            console.warn("publishData attempt failed", attempts, pubErr);
+            await new Promise((r) => setTimeout(r, 300 * attempts));
+          }
+        }
+        if (!published) {
+          console.warn("publishData failed after retries; skipping broadcast");
+        }
+      } catch (err) {
+        console.warn("Skipping broadcast; publish error:", err);
+      }
 
       setAgentStatus("online");
     } catch (error: any) {
@@ -156,11 +186,33 @@ export function MeetingAgent({ roomName, agentToken }: MeetingAgentProps) {
         const sourceTrack = destinationRef.current.stream.getAudioTracks()[0];
         if (sourceTrack) {
           const localTrack = new LocalAudioTrack(sourceTrack, undefined, true);
-          await mainRoom.localParticipant.publishTrack(localTrack, {
-            source: Track.Source.Unknown,
-            name: AGENT_TTS_TRACK_NAME,
-          });
-          publishedTrackRef.current = localTrack;
+          try {
+            // attempt publish with simple retry
+            let pubAttempts = 0;
+            let pubOk = false;
+            while (pubAttempts < 3 && !pubOk) {
+              try {
+                await mainRoom.localParticipant.publishTrack(localTrack, {
+                  source: Track.Source.Unknown,
+                  name: AGENT_TTS_TRACK_NAME,
+                });
+                pubOk = true;
+              } catch (pErr) {
+                pubAttempts++;
+                console.warn("publishTrack attempt failed", pubAttempts, pErr);
+                await new Promise((r) => setTimeout(r, 300 * pubAttempts));
+              }
+            }
+            if (!pubOk) {
+              console.warn("publishTrack failed after retries; stopping local track");
+              localTrack.stop();
+            } else {
+              publishedTrackRef.current = localTrack;
+            }
+          } catch (err) {
+            console.error("Failed to publish TTS track:", err);
+            localTrack.stop();
+          }
         }
 
         if (isMounted && generation === effectGenerationRef.current) {
